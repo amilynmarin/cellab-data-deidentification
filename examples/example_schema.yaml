@@ -1,0 +1,358 @@
+format_version: "1"
+schema_version: "example-1"
+study_namespace: "example-study"
+collaboration_id: "example-collaboration"
+key_alias: "example-key"
+key_version: "1"
+
+input:
+  primary_key: [participant_id, ema_id]
+  excel_sheet: null
+  unlisted_columns: error
+
+columns:
+  - source: participant_id
+    action: tokenize
+    output: participant_id
+    required: true
+    description: Collaboration-scoped participant token
+    sensitivity: direct_identifier
+    validation: {type: string, nullable: false}
+    token_domain: participant
+    token_prefix: p
+    token_sources:
+      - {column: nih_guid, namespace: global}
+
+  - source: nih_guid
+    action: tokenize
+    output: nih_guid_token
+    required: true
+    description: Tokenized NIH GUID for approved collaborator use
+    sensitivity: direct_identifier
+    validation: {type: string, nullable: false}
+    token_domain: nih_guid
+    token_prefix: guid
+    token_sources:
+      - {column: nih_guid, namespace: global}
+
+  - source: dyad_id
+    action: tokenize
+    output: dyad_id
+    required: false
+    description: Collaboration-scoped dyad token
+    sensitivity: direct_identifier
+    validation: {type: string, nullable: true}
+    token_domain: dyad
+    token_prefix: d
+    token_sources:
+      - {column: dyad_id, namespace: study}
+
+  - source: ema_id
+    action: tokenize
+    output: ema_anchor_id
+    required: true
+    description: Collaboration-scoped EMA event-anchor token
+    sensitivity: direct_identifier
+    validation: {type: string, nullable: false}
+    token_domain: ema_anchor
+    token_prefix: e
+    token_sources:
+      - {column: nih_guid, namespace: global}
+      - {column: ema_id, namespace: study}
+
+  - source: site_id
+    action: keep
+    required: true
+    description: Existing coded study site
+    role: site_code
+    sensitivity: geography
+    validation: {type: string, nullable: false, allowed_values: [S1, S2]}
+    value_labels: {S1: North site, S2: South site}
+
+  - source: site_name
+    action: remove
+    required: true
+    description: Direct site name removed from collaborator export
+    sensitivity: geography
+    validation: {type: string, nullable: false}
+
+  - source: role
+    action: keep
+    required: true
+    description: Dyad member role
+    validation: {type: string, nullable: false, allowed_values: [patient, significant_other]}
+    value_labels: {patient: Patient, significant_other: Significant other}
+
+  - source: date_of_birth
+    action: age_at_index
+    output: age_at_index
+    required: true
+    description: Age in whole years at study index event
+    sensitivity: direct_identifier
+    validation: {type: date, nullable: false}
+    index_event: study_index
+
+  - source: index_local
+    action: remove
+    required: true
+    description: Original local index timestamp used only for derivation
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: index_offset
+    action: remove
+    required: true
+    description: Original index-event numeric UTC offset
+    validation: {type: offset, nullable: false}
+
+  - source: prompt_local
+    action: timestamp
+    required: true
+    description: EMA prompt local timestamp replaced with synthetic local time
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: prompt_utc
+    action: timestamp
+    required: true
+    description: EMA prompt UTC timestamp replaced with synthetic UTC time
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: prompt_offset
+    action: timestamp
+    required: true
+    description: Original numeric UTC offset retained in frozen form
+    validation: {type: offset, nullable: false}
+
+  - source: response_start_local
+    action: timestamp
+    required: true
+    description: EMA response-start local timestamp
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: response_start_utc
+    action: timestamp
+    required: true
+    description: EMA response-start UTC timestamp
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: response_start_offset
+    action: timestamp
+    required: true
+    description: EMA response-start numeric UTC offset
+    validation: {type: offset, nullable: false}
+
+  - source: response_end_local
+    action: timestamp
+    required: true
+    description: EMA response-end local timestamp
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: response_end_utc
+    action: timestamp
+    required: true
+    description: EMA response-end UTC timestamp
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: false}
+
+  - source: response_end_offset
+    action: timestamp
+    required: true
+    description: EMA response-end numeric UTC offset
+    validation: {type: offset, nullable: false}
+
+  - source: rare_event_flag
+    action: keep
+    required: true
+    description: Schema-approved rare-event indicator
+    validation: {type: integer, nullable: false, allowed_values: [0, 1]}
+    value_labels: {"0": Routine record, "1": Rare event present}
+
+  - source: hospital_event_local
+    action: timestamp
+    required: false
+    description: Potentially identifiable event time represented only at research-day level when flagged
+    sensitivity: direct_identifier
+    validation: {type: datetime, nullable: true}
+
+  - source: hospital_event_offset
+    action: timestamp
+    required: false
+    description: Numeric UTC offset for potential rare event
+    validation: {type: offset, nullable: true}
+
+  - source: sex_code
+    action: keep
+    required: true
+    description: Source sex code
+    validation: {type: integer, nullable: false, allowed_values: [1, 2]}
+    value_labels: {"1": Female, "2": Male}
+
+  - source: race_code
+    action: keep
+    required: true
+    description: Source race code
+    validation: {type: integer, nullable: false, allowed_values: [1, 2, 3]}
+    value_labels: {"1": Category 1, "2": Category 2, "3": Category 3}
+
+  - source: distress
+    action: keep
+    required: false
+    description: Optional distress rating
+    validation: {type: integer, nullable: true, min_value: 0, max_value: 10}
+    missing_codes: [999]
+
+  - source: approved_code
+    action: keep
+    required: false
+    description: Approved text code retained with spreadsheet-formula protection
+    validation: {type: string, nullable: true}
+
+  - source: free_text
+    action: remove
+    required: false
+    description: Original free text excluded from standard export
+    sensitivity: free_text
+    validation: {type: string, nullable: true}
+
+shift:
+  participant_sources:
+    - {column: nih_guid, namespace: global}
+  dyad_sources:
+    - {column: dyad_id, namespace: study}
+  min_weeks: 4
+  max_weeks: 52
+  behavioral_day_boundary: "04:00"
+
+timestamp_groups:
+  - name: ema
+    anchor_columns: [participant_id, ema_id]
+    reference_field: prompt
+    timezone: {fixed: America/New_York}
+    fields:
+      - name: prompt
+        local_source: prompt_local
+        utc_source: prompt_utc
+        offset_source: prompt_offset
+        output_local: synthetic_local_timestamp
+        output_utc: synthetic_utc_timestamp
+        output_offset: utc_offset
+      - name: response_start
+        local_source: response_start_local
+        utc_source: response_start_utc
+        offset_source: response_start_offset
+        output_local: synthetic_response_start_local
+        output_utc: synthetic_response_start_utc
+        output_offset: synthetic_response_start_offset
+      - name: response_end
+        local_source: response_end_local
+        utc_source: response_end_utc
+        offset_source: response_end_offset
+        output_local: synthetic_response_end_local
+        output_utc: synthetic_response_end_utc
+        output_offset: synthetic_response_end_offset
+
+  - name: hospital_event
+    anchor_columns: [participant_id, ema_id]
+    reference_field: event
+    timezone: {fixed: America/New_York}
+    rare_event:
+      flag_column: rare_event_flag
+      values: [1]
+      policy: research_day_only
+      suppress_calendar_context: true
+    fields:
+      - name: event
+        local_source: hospital_event_local
+        offset_source: hospital_event_offset
+        output_local: synthetic_hospital_event_local
+        output_utc: synthetic_hospital_event_utc
+        output_offset: synthetic_hospital_event_offset
+
+index_events:
+  - name: study_index
+    source_column: index_local
+    kind: local_datetime
+    group_by_columns: [participant_id]
+    timezone: {fixed: America/New_York}
+    offset_source: index_offset
+    required: true
+
+derived_columns:
+  - name: response_elapsed_seconds
+    kind: elapsed_seconds
+    description: Exact response duration derived from original UTC timestamps
+    start_column: response_start_utc
+    end_column: response_end_utc
+
+  - name: weekday_weekend
+    kind: weekday_weekend
+    description: Original-calendar weekday or weekend classification
+    timestamp_group: ema
+    timestamp_field: prompt
+
+  - name: behavioral_research_day
+    kind: behavioral_research_day
+    description: Behavioral research day relative to study index
+    timestamp_group: ema
+    timestamp_field: prompt
+    index_event: study_index
+
+  - name: season
+    kind: season
+    description: Four-season category from original local date
+    timestamp_group: ema
+    timestamp_field: prompt
+
+  - name: holiday_proximity
+    kind: holiday_proximity
+    description: Signed days to nearest qualifying holiday within seven days
+    timestamp_group: ema
+    timestamp_field: prompt
+
+  - name: dst_status
+    kind: dst_status
+    description: Original daylight-saving status
+    timestamp_group: ema
+    timestamp_field: prompt
+
+  - name: dst_transition_proximity
+    kind: dst_transition_proximity
+    description: Signed days to nearest DST transition within 14 days
+    timestamp_group: ema
+    timestamp_field: prompt
+
+  - name: hospital_event_research_day
+    kind: behavioral_research_day
+    description: Rare event represented only by behavioral research day
+    timestamp_group: hospital_event
+    timestamp_field: event
+    index_event: study_index
+
+interval_checks:
+  - name: response_duration
+    start_column: response_start_utc
+    end_column: response_end_utc
+    min_seconds: 0
+    max_seconds: 3600
+
+small_cell_checks:
+  - name: sex_by_race
+    columns: [sex_code, race_code]
+    threshold: 5
+    include_missing: false
+    require_stable_within_participant: true
+
+holidays:
+  mode: us_federal
+  window_days: 7
+
+output:
+  analytic_csv: deidentified.csv
+  data_dictionary: data_dictionary.csv
+  qa_report: qa_report.json
+  release_archive: release.zip
