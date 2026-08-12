@@ -1,0 +1,9 @@
+include README.md
+include SECURITY.md
+include CHANGELOG.md
+recursive-include docs *.md
+recursive-include examples *.csv *.yaml *.sh
+recursive-include tests *.py
+
+include LICENSE
+include DISCLAIMER.md
