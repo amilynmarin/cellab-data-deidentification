@@ -1,3 +1,5 @@
+Please note: This software is still in development and is not ready for use.
+
 # CELLab Data De-identification
 
 **CELLab Data De-identification** is a schema-driven command-line tool for converting **one flat research dataset** into a deterministic, de-identified collaborator release while preserving analytically useful temporal, dyadic, and categorical structure.
